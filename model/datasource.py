@@ -4,6 +4,8 @@
 import os
 import shutil
 from sqlalchemy import Column
+from sqlalchemy.sql import text
+from sqlalchemy.sql.schema import DefaultClause
 from sqlalchemy.dialects.mysql import INTEGER, VARCHAR, TINYINT, TIMESTAMP
 from base import Base, MetaBase, AESJson
 
@@ -21,9 +23,9 @@ class DsModel(Base):
     type = Column('type', VARCHAR(length=64), nullable=False)
     params = Column('params', AESJson())
     user_id = Column('user_id', INTEGER(display_width=11), nullable=False)
-    ctime = Column('ctime', TIMESTAMP(), nullable=False)
-    utime = Column('utime', TIMESTAMP(), nullable=False)
-    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, default=0)
+    ctime = Column('ctime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP')))
+    utime = Column('utime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, server_default=DefaultClause(text('0')))
 
 
 class Ds(MetaBase):

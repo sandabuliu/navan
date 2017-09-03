@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from model.base import Dict, List
+from sqlalchemy.sql import text
+from sqlalchemy.sql.schema import DefaultClause
 
 from sqlalchemy import Column
 from sqlalchemy.dialects.mysql import INTEGER, TINYINT, TIMESTAMP, VARCHAR, CHAR
@@ -23,9 +25,9 @@ class ChartModel(Base):
     y_fields = Column('y_fields', List(), nullable=False)
     type = Column('type', CHAR(length=32), nullable=False)
     user_id = Column('user_id', INTEGER(display_width=11), nullable=False)
-    ctime = Column('ctime', TIMESTAMP(), nullable=False)
-    utime = Column('utime', TIMESTAMP(), nullable=False)
-    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, default=0)
+    ctime = Column('ctime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP')))
+    utime = Column('utime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, server_default=DefaultClause(text('0')))
 
 
 class Chart(MetaBase):

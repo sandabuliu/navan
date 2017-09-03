@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import zlib
 import base64
@@ -13,7 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 __author__ = 'tong'
 
 
-engine = create_engine('mysql://root:123456@127.0.0.1:3306/navan?charset=utf8', echo=False)
+engine = create_engine(os.environ.get('MYSQL_URL'), echo=False)
 session_factory = sessionmaker(bind=engine, autocommit=False)
 DBSession = scoped_session(session_factory)
 
@@ -115,7 +116,7 @@ class MetaBase(object):
 
 
 class Json(TypeDecorator):
-    impl = types.String
+    impl = types.TEXT
     _null = None
     _type = object
 

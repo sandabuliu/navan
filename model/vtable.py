@@ -3,6 +3,8 @@
 
 import json
 from sqlalchemy import Column
+from sqlalchemy.sql import text
+from sqlalchemy.sql.schema import DefaultClause
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.mysql import INTEGER, TINYINT, TIMESTAMP, TEXT, VARCHAR
 from base import Base, MetaBase
@@ -18,9 +20,9 @@ class VTableModel(Base):
     ds_id = Column('ds_id', INTEGER(display_width=11, unsigned=True), nullable=False)
     table_json = Column('query', TEXT(), nullable=False)
     user_id = Column('user_id', INTEGER(display_width=11), nullable=False)
-    ctime = Column('ctime', TIMESTAMP(), nullable=False)
-    utime = Column('utime', TIMESTAMP(), nullable=False)
-    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, default=0)
+    ctime = Column('ctime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP')))
+    utime = Column('utime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, server_default=DefaultClause(text('0')))
 
     @hybrid_property
     def query(self):

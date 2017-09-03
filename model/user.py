@@ -3,7 +3,8 @@
 
 import hashlib
 from sqlalchemy import Column
-from sqlalchemy.sql import func
+from sqlalchemy.sql import text
+from sqlalchemy.sql.schema import DefaultClause
 from sqlalchemy.dialects.mysql import INTEGER, VARCHAR, TINYINT, TIMESTAMP
 from base import Base, MetaBase
 
@@ -20,11 +21,11 @@ class UserModel(Base):
     mobile = Column('mobile', VARCHAR(length=20))
     email = Column('email', VARCHAR(length=255))
     name = Column('name', VARCHAR(charset=u'utf8mb4', collation=u'utf8mb4_unicode_ci', length=100))
-    ctime = Column('ctime', TIMESTAMP(), nullable=False, default=func.CURRENT_TIMESTAMP())
-    utime = Column('utime', TIMESTAMP(), nullable=False, default=func.CURRENT_TIMESTAMP())
     avatar = Column('avatar', VARCHAR(length=255))
     gender = Column('gender', TINYINT(display_width=4))
-    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, default=0)
+    ctime = Column('ctime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP')))
+    utime = Column('utime', TIMESTAMP(), nullable=False, server_default=DefaultClause(text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    is_del = Column('is_del', TINYINT(display_width=4, unsigned=True), nullable=False, server_default=DefaultClause(text('0')))
 
 
 class User(MetaBase):
