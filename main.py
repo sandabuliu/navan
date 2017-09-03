@@ -28,4 +28,4 @@ if __name__ == '__main__':
         application.listening_port = port
 
         server = Server(application, port)
-        server.start(10)
+        server.start(1)

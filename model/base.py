@@ -5,6 +5,7 @@ import os
 import json
 import zlib
 import base64
+from datetime import datetime
 from Crypto.Cipher import AES
 from sqlalchemy import TypeDecorator, types
 from sqlalchemy import create_engine, MetaData
@@ -103,13 +104,15 @@ class MetaBase(object):
         obj = self.object()
         for key, value in self.kwargs.items():
             setattr(obj, key, value)
+        obj.ctime = datetime.now()
         self.session.add(obj)
 
     def update(self, **kwargs):
+        kwargs['utime'] = datetime.now()
         return self.session.query(self.object).filter_by(is_del=0, **self.kwargs).update(kwargs)
 
     def delete(self):
-        return self.update(is_del=1)
+        return self.update(utime=datetime.now(), is_del=1)
 
     def __repr__(self):
         return str(self.kwargs)
