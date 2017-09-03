@@ -51,7 +51,7 @@ class SQLEngine(object):
 
     def table(self, name):
         if name not in self._metadata.tables:
-            self._metadata.reflect(only=[name])
+            self._metadata.reflect(only=[name], views=True)
         return self._metadata.tables[name]
 
     def databases(self):
@@ -61,8 +61,11 @@ class SQLEngine(object):
         return dbs
 
     def tables(self):
+        conn = self._engine.connect()
         if not self._table_names:
-            self._table_names = self._engine.table_names()
+            self._table_names = self._engine.dialect.get_table_names(conn)
+            self._table_names += self._engine.dialect.get_view_names(conn)
+            self._table_names.sort()
         return list(self._table_names)
 
     def schema(self, table):
