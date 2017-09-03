@@ -34,7 +34,7 @@ class FileHandler(BaseHandler):
         args = self.parse_args([
             {'name': 'filename', 'required': True, 'location': 'args'},
         ])
-        path = os.path.join(FILE_PATH, str(self.user_id), args['filename'])
+        path = os.path.join(FILE_PATH, str(self.user_id), 'datasource', args['filename'])
         if not path.startswith(FILE_PATH):
             self.response(400, message='路径填写有误')
             return

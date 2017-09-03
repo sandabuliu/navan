@@ -116,6 +116,7 @@ class Application(tornado.web.Application):
                                                                "default_filename": "index.html"}))
 
     def log_request(self, handler):
+        print handler, hasattr(handler, 'log_request')
         if hasattr(handler, 'log_request'):
             handler.log_request()
         else:
@@ -247,7 +248,7 @@ class BaseHandler(RequestHandler):
         ip = self.request.headers.get('X-Real-Ip') or self.request.remote_ip
         uri = self.request.path
         params = '&'.join(["%s=%s" % (key, value[0]) for key, value in self.request.arguments.items()])
-        if uri == '/api/file':
+        if uri == '/api/file' and self.request.method == 'POST':
             body = ['filename=%s&content_type=%s' % (f['filename'], f['content_type'])
                     for f in self.request.files.get('file')]
             body = ';'.join(body)
@@ -286,22 +287,23 @@ class BaseHandler(RequestHandler):
         from model import DBMeta
         if self.request.path == '/api/login':
             return
-        try:
-            user = self.get_cookie('user')
-        except Exception, e:
-            self.logger.error(e, exc_info=True)
-            raise UnAuthentication()
-
-        if not user:
-            raise UnAuthentication()
-        if time.time() - user.get('access', 0) > 60 * 60 * 24:
-            raise AuthExpire()
-        try:
-            db = DBMeta()
-            db = db.user(**user).auth()
-            self.user_id = db['id']
-        except Exception:
-            raise UnAuthentication()
+        self.user_id = 2
+        # try:
+        #     user = self.get_cookie('user')
+        # except Exception, e:
+        #     self.logger.error(e, exc_info=True)
+        #     raise UnAuthentication()
+        #
+        # if not user:
+        #     raise UnAuthentication()
+        # if time.time() - user.get('access', 0) > 60 * 60 * 24:
+        #     raise AuthExpire()
+        # try:
+        #     db = DBMeta()
+        #     db = db.user(**user).auth()
+        #     self.user_id = db['id']
+        # except Exception:
+        #     raise UnAuthentication()
 
 
 class UnAuthentication(HTTPError):

@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import json
-import shutil
 from model import DBMeta
 from server import BaseHandler
 
 from api.util import FILEMETA
+from query.engine import Engine
+from query.connector import Connector, ODOConnector
 
 __author__ = 'tong'
 
@@ -30,6 +31,10 @@ class ListHandler(BaseHandler):
         result = []
         for ds in datasources:
             item = {'id': ds.id, 'name': ds.name, 'ctime': ds.ctime, 'utime': ds.utime, 'type': ds.type.upper()}
+            connector = Connector(type=ds.type.upper(), user_id=self.user_id, db=ds.name, **ds.params)
+            if isinstance(connector, ODOConnector):
+                engine = Engine(connector)
+                ds.params['filelist'] = engine.tables()
             item.update(ds.params)
             result.append(item)
 
