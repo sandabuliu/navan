@@ -116,7 +116,6 @@ class Application(tornado.web.Application):
                                                                "default_filename": "index.html"}))
 
     def log_request(self, handler):
-        print handler, hasattr(handler, 'log_request')
         if hasattr(handler, 'log_request'):
             handler.log_request()
         else:
@@ -287,23 +286,22 @@ class BaseHandler(RequestHandler):
         from model import DBMeta
         if self.request.path == '/api/login':
             return
-        self.user_id = 2
-        # try:
-        #     user = self.get_cookie('user')
-        # except Exception, e:
-        #     self.logger.error(e, exc_info=True)
-        #     raise UnAuthentication()
-        #
-        # if not user:
-        #     raise UnAuthentication()
-        # if time.time() - user.get('access', 0) > 60 * 60 * 24:
-        #     raise AuthExpire()
-        # try:
-        #     db = DBMeta()
-        #     db = db.user(**user).auth()
-        #     self.user_id = db['id']
-        # except Exception:
-        #     raise UnAuthentication()
+        try:
+            user = self.get_cookie('user')
+        except Exception, e:
+            self.logger.error(e, exc_info=True)
+            raise UnAuthentication()
+
+        if not user:
+            raise UnAuthentication()
+        if time.time() - user.get('access', 0) > 60 * 60 * 24:
+            raise AuthExpire()
+        try:
+            db = DBMeta()
+            db = db.user(**user).auth()
+            self.user_id = db['id']
+        except Exception:
+            raise UnAuthentication()
 
 
 class UnAuthentication(HTTPError):
