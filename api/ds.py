@@ -4,8 +4,6 @@
 from model import DBMeta
 from server import BaseHandler
 
-from query.constants import FILE_PATH
-
 __author__ = 'tong'
 
 

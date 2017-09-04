@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-
 __author__ = 'tong'
 
 
@@ -72,7 +70,7 @@ class ODOConnector(ConnectorBase):
 
     @property
     def connect_str(self):
-        from constants import FILE_PATH
+        from utils.finder import Finder
         user_id = self.kwargs.get('user_id')
         ds_name = self.kwargs.get('db')
-        return os.path.join(FILE_PATH, str(user_id), 'datasource', ds_name)
+        return Finder(user_id).datasource(ds_name)

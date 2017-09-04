@@ -2,15 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import os
-import shutil
 from sqlalchemy import Column
 from sqlalchemy.sql import text
 from sqlalchemy.sql.schema import DefaultClause
 from sqlalchemy.dialects.mysql import INTEGER, VARCHAR, TINYINT, TIMESTAMP
-from base import Base, MetaBase, AESJson
 
-from query.constants import FILE_PATH
-
+from utils.finder import Finder
+from model.base import Base, MetaBase, AESJson
 
 __author__ = 'tong'
 
@@ -44,8 +42,17 @@ class Ds(MetaBase):
 
     def delete(self):
         super(Ds, self).delete()
-        path = os.path.join(FILE_PATH, str(self.user_id), 'datasource', self.name)
-        trash = os.path.join(FILE_PATH, str(self.user_id), 'trash')
-        if not os.path.exists(trash):
-            os.makedirs(trash)
-        shutil.move(path, trash)
+        finder = Finder(self.user_id)
+        finder.rm_datasource(self.name)
+
+    def update(self, **kwargs):
+        super(Ds, self).update(**kwargs)
+        if 'params' in kwargs and 'filelist' in kwargs['params']:
+            finder = Finder(self.user_id)
+            filelist = kwargs['params']['filelist']
+            names = [_.name for _ in self.all()]
+            for name in names:
+                dirs = os.listdir(finder.datasource(name))
+                for filename in dirs:
+                    if filename not in filelist:
+                        finder.rm_table(name, filename)

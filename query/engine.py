@@ -94,6 +94,8 @@ class ODOEngine(SQLEngine):
         from blaze import data
         if name not in self._metadata:
             filename = os.path.join(self._connect_str, name)
+            if not os.path.exists(filename):
+                raise Exception('表 %s 不存在' % name.encode() if isinstance(name, unicode) else name)
             self._metadata[name] = data(filename)
         return self._metadata[name]
 
