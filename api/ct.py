@@ -40,7 +40,7 @@ class ChartHandler(BaseHandler):
         result = query.execute()
 
         fields = [_['name'][0] for _ in self.args['yFields'] if _['name']]
-        self.response(**chart_data(result, args['xFields'], fields))
+        self.response(sql=query.sql, **chart_data(result, args['xFields'], fields))
         del self.dbmeta
 
     def post(self):

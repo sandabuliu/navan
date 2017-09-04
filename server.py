@@ -138,6 +138,7 @@ class BaseHandler(RequestHandler):
     log_tracer = LogTracer()
     logger.addFilter(log_tracer)
     api_logger.addFilter(log_tracer)
+    logging.getLogger('query').addFilter(log_tracer)
 
     AES_OBJ = AES.new(str(uuid.uuid4())[:16])
 

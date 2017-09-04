@@ -2,14 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import copy
+import logging
 from functools import wraps
 from binder import bind, clause
 from clause import Table
 from connector import ConnectorBase
-from engine import SQLEngine, ODOEngine
+from engine import SQLEngine
 
 
 __author__ = 'tong'
+
+logger = logging.getLogger('query')
 
 
 def sql_list(array):
@@ -196,9 +199,13 @@ class Query(object):
 
     @property
     def sql(self):
-        if isinstance(self.engine, ODOEngine):
-            return self._sql_string()
-        return str(self._sql_object())
+        if isinstance(self.engine, SQLEngine):
+            obj = self._sql_object()
+            logger.info('SQL:\n%s, PRAMAS: %s' % (obj, obj.params))
+            return str(obj)
+        obj = self._sql_string()
+        logger.info('SQL: %s' % obj)
+        return obj
 
     def bind(self, bind):
         if bind is None:
@@ -214,6 +221,7 @@ class Query(object):
         from proxy import SQLResult, ODOResult
         if not self.connector:
             raise Exception('You should bind a connector first!')
+
         if type(self.engine) == SQLEngine:
             return SQLResult(self._sql_object().execute())
         return ODOResult(self._odo_object())
