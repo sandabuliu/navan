@@ -28,6 +28,9 @@ def clause(data):
     if not isinstance(data, dict):
         return data
     ttype = str(data.get('type')).lower()
+    if ttype == 'query':
+        from query import Query
+        return Query.load(data)
     meth = globals().get(ttype)
     if not meth:
         raise Exception('query unsupported type: %s, query: %s' % (ttype, data))
@@ -81,9 +84,10 @@ class SQLBinder(object):
             return self._query.tables[claus.name]
 
         tables = {}
-        self._query.connector.reflect(only=claus.tables)
         for tb in claus.tables:
-            tables[tb] = self._query.tables[tb] = self._query.tables[tb]
+            if tb not in self._query.tables:
+                self._query.connector.reflect(only=[tb])
+            tables[tb] = self._query.tables[tb]
 
         dbtype = self._query.connector.type
         binder = TBBinder(dbtype, tables)
@@ -156,7 +160,9 @@ class SQLBinder(object):
             '<=': lambda a, b: a <= b,
             '>': lambda a, b: a > b,
             '<': lambda a, b: a < b,
-            'like': lambda a, b: a.like(b)
+            'like': lambda a, b: a.like(b),
+            'null': lambda a, b: a == None,
+            'not null': lambda a, b: a != None
         }[op](bind(self._query, claus.object), bind(self._query, claus.other))
 
     def get_table(self, table_name=None):
@@ -264,7 +270,9 @@ class ODOBinder(object):
             '<=': lambda a, b: a <= b,
             '>': lambda a, b: a > b,
             '<': lambda a, b: a < b,
-            'like': lambda a, b: a.like(b)
+            'like': lambda a, b: a.like(b),
+            'null': lambda a, b: a == None,
+            'not null': lambda a, b: a != None
         }[op](bind(self._query, claus.object), bind(self._query, claus.other))
 
     def get_table(self, claus):
@@ -306,7 +314,9 @@ class TBBinder(object):
             '<=': lambda a, b: a <= b,
             '>': lambda a, b: a > b,
             '<': lambda a, b: a < b,
-            'like': lambda a, b: a.like(b)
+            'like': lambda a, b: a.like(b),
+            'null': lambda a, b: a == None,
+            'not null': lambda a, b: a != None
         }[op](self.bind(claus.object), self.bind(claus.other))
 
     def function(self, claus):

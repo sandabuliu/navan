@@ -44,6 +44,17 @@ class ConnectorBase(object):
         for name in only:
             self._tables[name] = self.engine.table(name)
 
+    def vtables(self):
+        from model import DBMeta
+        user_id = self.kwargs.get('user_id')
+        ds_name = self.kwargs.get('db')
+        if not user_id or not ds_name:
+            return {}
+        dbmeta = DBMeta(user_id)
+        datasource = dbmeta.datasource(name=ds_name).single()
+        vtables = dbmeta.vtable(ds_id=datasource.id).all()
+        return [(tb.name, tb.query) for tb in vtables]
+
 
 class SQLConnector(ConnectorBase):
     types = ['mysql', 'mssql', 'oracle']

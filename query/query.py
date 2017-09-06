@@ -8,6 +8,7 @@ from binder import bind, clause
 from clause import Table
 from connector import ConnectorBase
 from engine import SQLEngine
+from util import token
 
 
 __author__ = 'tong'
@@ -81,6 +82,8 @@ class Query(object):
     def table(self):
         if isinstance(self.query['table'], basestring):
             return Table(self.query['table'])
+        if not self.query['table'] and isinstance(self._bindobj, Query):
+            return Table(self._bindobj._alias or token())
         return clause(self.query['table'])
 
     @property
@@ -120,12 +123,11 @@ class Query(object):
     def binded_table(self):
         if not self.connector:
             return
-
         if self.table.name in self.tables:
             return self.tables[self.table.name]
         if isinstance(self._bindobj, Query):
+            self._bindobj.alias(self.table.name)
             table = self._bindobj._sql_object()
-            table.alias(self.table.name)
             self.tables[self.table.name] = table
             return table
 
@@ -198,9 +200,15 @@ class Query(object):
         return compute(table)
 
     @property
+    def object(self):
+        if isinstance(self.engine, SQLEngine):
+            return self._sql_object()
+        return self._odo_object()
+
+    @property
     def sql(self):
         if isinstance(self.engine, SQLEngine):
-            obj = self._sql_object()
+            obj = self._sql_object().compile()
             logger.info('SQL:\n%s, PRAMAS: %s' % (obj, obj.params))
             return str(obj)
         obj = self._sql_string()
@@ -216,6 +224,13 @@ class Query(object):
             self._bindobj = bind
         else:
             raise Exception('can not bind type: `[%s]%s`' % (type(bind), bind))
+        return self
+
+    def deepbind(self, bind):
+        if isinstance(self._bindobj, Query):
+            self._bindobj.deepbind(bind)
+        else:
+            self.bind(bind)
 
     def execute(self):
         from proxy import SQLResult, ODOResult
@@ -230,10 +245,10 @@ class Query(object):
         self._alias = value
         return self
 
-    def json(self):
+    def _json(self):
         results = []
         if isinstance(self._bindobj, Query):
-            results = self._bindobj.json()
+            results = self._bindobj._json()
         results.insert(0, {
             'name': self._alias,
             'reference': self.table.name,
@@ -241,8 +256,22 @@ class Query(object):
         })
         return results
 
+    def json(self):
+        return {'type': 'query', 'query': self._json()}
+
+    def set_limit(self, value):
+        if not self.limit or self.limit > value:
+            self._query['limit'] = value
+
     @classmethod
-    def load(cls, queries, bind=None):
+    def load(cls, query, bind=None):
+        if query['type'] == 'table':
+            return Query(table=query)
+        elif query['type'] == 'query':
+            queries = query['query']
+        else:
+            raise Exception('Not a query!')
+
         items = {_.get('name'): _ for _ in queries}
 
         item = items[None]

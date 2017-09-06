@@ -30,5 +30,6 @@ class SchemaHandler(BaseHandler):
         vtables = dbmeta.vtable(ds_id=args['ds_id']).all()
         for tb in vtables:
             table = clause(tb.query)
-            result.append({'name': tb.name, 'schema': [c.alias for c in table.columns]})
+            if not tables or tb.name in tables:
+                result.append({'name': tb.name, 'schema': [c.alias or c.value for c in table.columns]})
         self.response(**{'total': len(result), 'schema': result})

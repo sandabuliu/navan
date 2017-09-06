@@ -7,17 +7,11 @@ from server import BaseHandler
 
 from query.query import Query
 from query.connector import Connector
-from query.clause import Table, Column, Function
+from query.clause import Table, Column
 
-from api.util import chart_data
+from api.util import chart_data, function
 
 __author__ = 'tong'
-
-
-def function(func_name, name):
-    if func_name == 'distinct':
-        return Function('count', Column(name).distinct()).json()
-    return Function(func_name, Column(name)).json()
 
 
 class ChartHandler(BaseHandler):
@@ -36,7 +30,7 @@ class ChartHandler(BaseHandler):
 
         query = self.query
         self.logger.info('%s' % query.json())
-        query.bind(connector)
+        query.deepbind(connector)
         result = query.execute()
 
         fields = [_['name'][0] for _ in self.args['yFields'] if _['name']]
@@ -139,9 +133,8 @@ class ChartHandler(BaseHandler):
 
     @property
     def query(self):
-        return Query(
-            table=self.table,
-            columns=self.columns,
-            group_by=self.group_by,
-            limit=500
-        )
+        table = self.table
+        if table['type'] == 'table':
+            return Query(table=self.table, columns=self.columns, group_by=self.group_by, limit=500)
+        else:
+            return Query(columns=self.columns, group_by=self.group_by, limit=500).bind(Query.load(self.table))

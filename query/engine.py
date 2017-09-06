@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import os
+import logging
 from sqlalchemy.sql import select
 from sqlalchemy import create_engine, MetaData
 from proxy import SQLResult, ODOResult
 from connector import Connector, ConnectorBase
 
 __author__ = 'tong'
+
+logger = logging.getLogger('query')
 
 
 def Engine(connobj):
@@ -32,6 +35,7 @@ class SQLEngine(object):
         self._engine = self.create_engine()
         self._metadata = self.create_meta()
         self._table_names = None
+        self._vtables = {}
 
     def create_engine(self):
         return create_engine(self._connect_str)
@@ -50,9 +54,24 @@ class SQLEngine(object):
         raise Exception('Error %s\'connector type: %s(%s)' % (cls.__name__, connobj, type(connobj)))
 
     def table(self, name):
-        if name not in self._metadata.tables:
+        if name in self._vtables:
+            return self._vtables[name]
+        if name in self._metadata.tables:
+            return self._metadata.tables[name]
+        if name in self.tables():
             self._metadata.reflect(only=[name], views=True)
-        return self._metadata.tables[name]
+        if not self._vtables and isinstance(self._connobj, ConnectorBase):
+            self.load_virtual()
+        return self._vtables.get(name, self._metadata.tables.get(name))
+
+    def load_virtual(self):
+        from util import get_query
+        for tb_name, vtable in self._connobj.vtables():
+            try:
+                query = get_query(vtable).bind(self._connobj).object
+                self._vtables[tb_name] = query.alias(tb_name)
+            except Exception, e:
+                logger.error('Load virtual table failed: %s' % e, exc_info=True)
 
     def databases(self):
         conn = self._engine.connect()
@@ -69,12 +88,19 @@ class SQLEngine(object):
         return list(self._table_names)
 
     def schema(self, table):
+        from constants import types
         if not self._table_names:
             self._table_names = self._engine.table_names()
-        columns = self._engine.dialect.get_columns(self._engine, table)
-        for column in columns:
-            column['type'] = column['type'].python_type
-        return columns
+        if table in self._table_names:
+            columns = self._engine.dialect.get_columns(self._engine, table)
+            for column in columns:
+                column['type'] = column['type'].python_type
+            return columns
+        else:
+            if not self._vtables:
+                self.load_virtual()
+            return [{'name': key, 'type': types.get(value.type, value.type)}
+                    for key, value in self._vtables[table].columns.items()]
 
     def preview(self, table, rows=100):
         if table not in self._metadata.tables:

@@ -45,4 +45,6 @@ types = {
     'string': basestring,
     'time': time,
     'timedelta': timedelta,
+    'TEXT': basestring,
+    'INTEGER': int
 }

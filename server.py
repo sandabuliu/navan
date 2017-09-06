@@ -162,8 +162,11 @@ class BaseHandler(RequestHandler):
         @coroutine
         @wraps(func)
         def _func(*args, **kwargs):
-            yield Task(self.run, func, *args, **kwargs)
-            self.do_response()
+            try:
+                yield Task(self.run, func, *args, **kwargs)
+                self.do_response()
+            except Exception, e:
+                self.logger.error(e, exc_info=True)
         return _func
 
     @coroutine
@@ -219,9 +222,6 @@ class BaseHandler(RequestHandler):
             name = arg.get('name')
             cast = arg.get('cast')
             para = self.location(location)
-            if not para:
-                continue
-
             if name not in para:
                 if 'default' in arg:
                     para[name] = arg['default']
@@ -247,7 +247,7 @@ class BaseHandler(RequestHandler):
         tornado = int((request_end_time - self.process_end_time) * 1000)
         ip = self.request.headers.get('X-Real-Ip') or self.request.remote_ip
         uri = self.request.path
-        params = '&'.join(["%s=%s" % (key, value[0]) for key, value in self.request.arguments.items()])
+        params = '&'.join(["%s=%s" % (key, self.get_argument(key)) for key in self.request.arguments])
         if uri == '/api/file' and self.request.method == 'POST':
             body = ['filename=%s&content_type=%s' % (f['filename'], f['content_type'])
                     for f in self.request.files.get('file')]
@@ -287,22 +287,26 @@ class BaseHandler(RequestHandler):
         from model import DBMeta
         if self.request.path == '/api/login':
             return
-        try:
-            user = self.get_cookie('user')
-        except Exception, e:
-            self.logger.error(e, exc_info=True)
-            raise UnAuthentication()
+        self.user_id = 2
+        # try:
+        #     user = self.get_cookie('user')
+        # except Exception, e:
+        #     self.logger.error(e, exc_info=True)
+        #     raise UnAuthentication()
+        #
+        # if not user:
+        #     raise UnAuthentication()
+        # if time.time() - user.get('access', 0) > 60 * 60 * 24:
+        #     raise AuthExpire()
+        # try:
+        #     db = DBMeta()
+        #     db = db.user(**user).auth()
+        #     self.user_id = db['id']
+        # except Exception:
+        #     raise UnAuthentication()
 
-        if not user:
-            raise UnAuthentication()
-        if time.time() - user.get('access', 0) > 60 * 60 * 24:
-            raise AuthExpire()
-        try:
-            db = DBMeta()
-            db = db.user(**user).auth()
-            self.user_id = db['id']
-        except Exception:
-            raise UnAuthentication()
+    def data_received(self, chunk):
+        pass
 
 
 class UnAuthentication(HTTPError):
@@ -323,18 +327,19 @@ class JSONEncoder(json.JSONEncoder):
 
         if obj == type(None):
             return None
-        elif isinstance(obj, pandas.tslib.NaTType):
+        if isinstance(obj, type):
+            return obj.__name__
+        if isinstance(obj, pandas.tslib.NaTType):
             return None
-        elif isinstance(obj, datetime):
-            return '%04d-%02d-%02d %02d:%02d:%02d' % (obj.year, obj.month, obj.day, obj.hour, obj.minute, obj.second)
-        elif isinstance(obj, date):
-            return '%04d-%02d-%02d 00:00:00' % (obj.year, obj.month, obj.day)
-        elif isinstance(obj, time):
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(obj, date):
+            return obj.strftime('%Y-%m-%d')
+        if isinstance(obj, time):
             return obj.strftime('%H:%M:%S')
-        elif isinstance(obj, Decimal):
+        if isinstance(obj, Decimal):
             return float(str(obj))
-        else:
-            return super(JSONEncoder, self).default(obj)
+        return super(JSONEncoder, self).default(obj)
 
 formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] [%(trace_id)s] %(message)s')
 handler = logging.StreamHandler()
