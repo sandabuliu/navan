@@ -254,7 +254,7 @@ class BaseHandler(RequestHandler):
             body = ';'.join(body)
         else:
             body = self.request.body
-        log = '[{port}] [{ip}] [{meth} {uri}] [{params}] [{body}] [{status_code}] {pending} {process} {tornado} {all}'.format(
+        log = u'[{port}] [{ip}] [{meth} {uri}] [{params}] [{body}] [{status_code}] {pending} {process} {tornado} {all}'.format(
             port=self.application.listening_port,
             ip=ip, uri=uri, params=params,
             status_code=self.status_code, body=body,

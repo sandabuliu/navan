@@ -47,7 +47,7 @@ def chart_data(result, xFields, yFields):
 def function(func_name, name):
     from query.clause import Function, Column
     if func_name == 'distinct':
-        return Function('count', Column(name).distinct()).json()
+        return Function('count', Column(name).distinct()).label('%s_%s' % (name, func_name)).json()
     return Function(func_name, Column(name)).label('%s_%s' % (name, func_name)).json()
 
 
