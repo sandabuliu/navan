@@ -43,15 +43,17 @@ class SQLEngine(object):
     def create_meta(self):
         return MetaData(self._engine)
 
-    @classmethod
-    def get_connect_str(cls, connobj):
+    def get_connect_str(self, connobj):
         if isinstance(connobj, dict):
-            connobj = Connector(**connobj)
-        if isinstance(connobj, ConnectorBase):
+            self._connobj = Connector(**connobj)
+            self._connobj._engine = self
+            return self._connobj.connect_str
+        elif isinstance(connobj, ConnectorBase):
+            self._connobj._engine = self
             return connobj.connect_str
         elif isinstance(connobj, basestring):
             return connobj
-        raise Exception('Error %s\'connector type: %s(%s)' % (cls.__name__, connobj, type(connobj)))
+        raise Exception('Error %s\'connector type: %s(%s)' % (self.__class__.__name__, connobj, type(connobj)))
 
     def table(self, name):
         if name in self._vtables:
@@ -60,18 +62,26 @@ class SQLEngine(object):
             return self._metadata.tables[name]
         if name in self.tables():
             self._metadata.reflect(only=[name], views=True)
+            return self._metadata.tables[name]
         if not self._vtables and isinstance(self._connobj, ConnectorBase):
             self.load_virtual()
-        return self._vtables.get(name, self._metadata.tables.get(name))
+        table = self._vtables.get(name, self._metadata.get(name))
+        if table is None:
+            raise Exception('No such table: %s' % name)
+        return table
 
     def load_virtual(self):
         from util import get_query
         for tb_name, vtable in self._connobj.vtables():
             try:
+                self._vtables[tb_name] = None
                 query = get_query(vtable).bind(self._connobj).object
-                self._vtables[tb_name] = query.alias(tb_name)
+                if hasattr(query, 'alias'):
+                    query = query.alias(tb_name)
+                self._vtables[tb_name] = query
+                logger.info('Load virtual table success: %s' % tb_name)
             except Exception, e:
-                logger.error('Load virtual table failed: %s' % e, exc_info=True)
+                logger.error('Load virtual table(%s) failed: %s' % (tb_name, e), exc_info=True)
 
     def databases(self):
         conn = self._engine.connect()
@@ -118,12 +128,22 @@ class ODOEngine(SQLEngine):
 
     def table(self, name):
         from blaze import data
-        if name not in self._metadata:
+        if name in self._vtables:
+            return self._vtables[name]
+        if name in self._metadata:
+            return self._metadata[name]
+        if name in self.tables():
             filename = os.path.join(self._connect_str, name)
             if not os.path.exists(filename):
-                raise Exception('表 %s 不存在' % name.encode() if isinstance(name, unicode) else name)
+                raise Exception('表 %s 不存在' % (name.encode() if isinstance(name, unicode) else name))
             self._metadata[name] = data(filename)
-        return self._metadata[name]
+            return self._metadata[name]
+        if not self._vtables and isinstance(self._connobj, ConnectorBase):
+            self.load_virtual()
+        table = self._vtables.get(name, self._metadata.get(name))
+        if table is None:
+            raise Exception('No such table: %s' % name)
+        return table
 
     def databases(self):
         path = os.path.dirname(self._connect_str)

@@ -7,7 +7,7 @@ from functools import wraps
 from binder import bind, clause
 from clause import Table
 from connector import ConnectorBase
-from engine import SQLEngine
+from engine import SQLEngine, ODOEngine
 from util import token
 
 
@@ -127,7 +127,7 @@ class Query(object):
             return self.tables[self.table.name]
         if isinstance(self._bindobj, Query):
             self._bindobj.alias(self.table.name)
-            table = self._bindobj._sql_object()
+            table = self._bindobj.object
             self.tables[self.table.name] = table
             return table
 
@@ -177,47 +177,49 @@ class Query(object):
         return ret
 
     def _odo_object(self):
-        from blaze import by, compute, merge, head
+        from blaze import by, merge, head
 
         table = self.binded_table
+        if self.whereclauses:
+            wheres = bind_list(self, self.whereclauses)
+            table = table[reduce(lambda x, y: x and y, wheres)]
+        tb = self.tables[self.table.name]
+        self.tables[self.table.name] = table
         columns = bind_list(self, self.columns) or [table[_] for _ in table.fields]
-        table = merge(*columns)
+        self.tables[self.table.name] = tb
         if self.groupclauses:
             groups = bind_list(self, self.groupclauses)
             groups = [table[_.fields[0]] for _ in groups]
             names = [_.fields[0] for _ in groups]
             groups = merge(*groups) if len(groups) > 1 else groups[0]
             table = by(groups, **{c.fields[0]: c for c in columns if c.fields[0] not in names})
-        if self.whereclauses:
-            wheres = bind_list(self, self.whereclauses)
-            table = table[reduce(lambda x, y: x and y, wheres)]
         if self.orderclauses:
             orders = bind_list(self, self.orderclauses)
             for order in orders.reverse():
                 table = table.sort(*order)
         if self.limit:
             table = head(table, self.limit)
-        return compute(table)
+        return table[[_.fields[0] for _ in columns]]
 
     @property
     def object(self):
-        if isinstance(self.engine, SQLEngine):
-            return self._sql_object()
-        return self._odo_object()
+        if isinstance(self.engine, ODOEngine):
+            return self._odo_object()
+        return self._sql_object()
 
     @property
     def sql(self):
-        if isinstance(self.engine, SQLEngine):
-            obj = self._sql_object().compile()
-            logger.info('SQL:\n%s, PRAMAS: %s' % (obj, obj.params))
-            return str(obj)
-        obj = self._sql_string()
-        logger.info('SQL: %s' % obj)
-        return obj
+        if isinstance(self.engine, ODOEngine):
+            obj = self._sql_string()
+            logger.info('SQL: %s' % obj)
+            return obj
+        obj = self._sql_object().compile()
+        logger.info('SQL:\n%s, PRAMAS: %s' % (obj, obj.params))
+        return str(obj)
 
     def bind(self, bind):
         if bind is None:
-            return
+            return self
         if isinstance(bind, ConnectorBase):
             self._bindobj = bind
         elif isinstance(bind, Query):
@@ -233,13 +235,15 @@ class Query(object):
             self.bind(bind)
 
     def execute(self):
+        from blaze import compute
         from proxy import SQLResult, ODOResult
         if not self.connector:
             raise Exception('You should bind a connector first!')
 
         if type(self.engine) == SQLEngine:
             return SQLResult(self._sql_object().execute())
-        return ODOResult(self._odo_object())
+        obj = self._odo_object()
+        return ODOResult(compute(obj))
 
     def alias(self, value):
         self._alias = value

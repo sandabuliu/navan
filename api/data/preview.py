@@ -74,7 +74,7 @@ class AggrPreviewHandler(BaseHandler):
 
         query = self.query
         self.logger.info('%s' % query.json())
-        query.bind(connector)
+        query.deepbind(connector)
         result = query.execute()
         self.response(sql=query.sql, data=result.json_data, schema=result.schema, columns=result.columns)
         del self.dbmeta
@@ -118,10 +118,9 @@ class AggrPreviewHandler(BaseHandler):
 
     @property
     def query(self):
-        return Query(
-            table=self.table,
-            columns=self.columns,
-            where=self.where,
-            group_by=self.group_by,
-            limit=10
-        )
+        table = self.table
+        if table['type'] == 'table':
+            return Query(table=self.table, columns=self.columns, where=self.where, group_by=self.group_by, limit=10)
+        else:
+            return Query(columns=self.columns, where=self.where, group_by=self.group_by,
+                         limit=10).bind(Query.load(self.table))

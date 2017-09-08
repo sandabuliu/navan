@@ -53,8 +53,20 @@ class User(MetaBase):
         self.password = pwd
 
     def auth(self):
+        from utils.cache import cache
         pwd = self.password
         self.password = hashlib.md5(self.password).hexdigest()
+        user = cache.get_json('session', self.username)
+        if user:
+            if user['password'] != self.password:
+                raise Exception('user/password error!')
+            else:
+                user.pop('password')
+                return user
         obj = self.single()
+        user = {'id': obj.id, 'username': obj.username, 'avatar': obj.avatar,
+                'name': obj.name, 'password': self.password}
+        cache.set_json('session', self.username, user)
         self.password = pwd
-        return {'id': obj.id, 'username': obj.username, 'avatar': obj.avatar, 'name': obj.name}
+        user.pop('password')
+        return user
