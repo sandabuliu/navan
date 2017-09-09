@@ -65,7 +65,7 @@ class SQLEngine(object):
             return self._metadata.tables[name]
         if not self._vtables and isinstance(self._connobj, ConnectorBase):
             self.load_virtual()
-        table = self._vtables.get(name, self._metadata.get(name))
+        table = self._vtables.get(name, self._metadata.tables.get(name))
         if table is None:
             raise Exception('No such table: %s' % name)
         return table
