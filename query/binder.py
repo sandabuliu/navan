@@ -3,7 +3,7 @@
 
 import logging
 from sqlalchemy.sql.elements import and_, or_
-from clause import Column, Function, Condition, OrderBy, Table, Clause
+from clause import Column, Function, Condition, OrderBy, Table, Clause, Text
 from connector import ODOConnector
 
 __all__ = ('bind', 'clause')
@@ -35,6 +35,10 @@ def clause(data):
     if not meth:
         raise Exception('query unsupported type: %s, query: %s' % (ttype, data))
     return meth(data)
+
+
+def text(data):
+    return Text(data['text'])
 
 
 def field(data):
@@ -77,6 +81,10 @@ def value(data):
 class SQLBinder(object):
     def __init__(self, query):
         self._query = query
+
+    def text(self, claus):
+        from sqlalchemy import text
+        return text(claus.text)
 
     def table(self, claus):
         from sqlalchemy.sql import select, and_

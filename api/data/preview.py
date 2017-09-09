@@ -10,7 +10,7 @@ from query.query import Query
 from query.engine import Engine
 from query.util import get_query
 from query.connector import Connector
-from query.clause import Table, Column, Condition
+from query.clause import Table, Column, Condition, Text
 
 from api.util import function
 
@@ -87,7 +87,10 @@ class AggrPreviewHandler(BaseHandler):
                 continue
             name = condition['name']
             operator = condition['operator']
-            value = condition['value']
+            if condition.get('value_type', 'value') == 'value':
+                value = condition['value']
+            else:
+                value = Text(condition['value'])
             c = Condition(Column(name), operator, value)
             wheres.append(c.json())
         return wheres

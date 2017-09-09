@@ -38,6 +38,28 @@ class Clause(object):
     def table(self):
         return None
 
+    @property
+    def sql(self):
+        return self.__repr__()
+
+
+class Text(Clause):
+    def __init__(self, text):
+        self._clause = text
+
+    def json(self):
+        return {'type': 'text', 'text': self._clause}
+
+    def __str__(self):
+        return json.dumps(self.json(), cls=JsonEncoder)
+
+    def __repr__(self):
+        return self._clause
+
+    @property
+    def text(self):
+        return self._clause
+
 
 class Column(Clause):
     def __init__(self, *value):
@@ -194,16 +216,6 @@ class Function(Column):
     def __repr__(self):
         alias = (' AS %s' % self.alias) if self.alias else ''
         return '%s(%s)%s' % (self.name, ', '.join([_.__repr__() for _ in self.args]), alias)
-
-    def bind(self, table):
-        import functions
-        name = table.bind.name
-        meth = functions.entry(name, self.name.lower())(
-            *[_.bind(table) if hasattr(_, 'bind') else _ for _ in self.args]
-        )
-        if self.alias:
-            meth = meth.label(self.alias)
-        return meth
 
 
 class OrderBy(Column):
