@@ -137,4 +137,7 @@ class ChartHandler(BaseHandler):
         if table['type'] == 'table':
             return Query(table=self.table, columns=self.columns, group_by=self.group_by, limit=500)
         else:
-            return Query(columns=self.columns, group_by=self.group_by, limit=500).bind(Query.load(self.table))
+            query = Query.load(self.table)
+            name = self.args['table']
+            query.alias(name)
+            return Query(table=name, columns=self.columns, group_by=self.group_by, limit=500).bind(query)

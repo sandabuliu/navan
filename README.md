@@ -16,7 +16,6 @@
 * 字段转换
 * 图表条件
 * 合表管理
-* 函数支持
 * 仪表盘分享
 
 Copyright © 2017 [g_tongbin@foxmail.com](mailto:g_tongbin@foxmail.com)

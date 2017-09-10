@@ -125,5 +125,8 @@ class AggrPreviewHandler(BaseHandler):
         if table['type'] == 'table':
             return Query(table=self.table, columns=self.columns, where=self.where, group_by=self.group_by, limit=10)
         else:
-            return Query(columns=self.columns, where=self.where, group_by=self.group_by,
-                         limit=10).bind(Query.load(self.table))
+            query = Query.load(self.table)
+            name = self.args['table']
+            query.alias(name)
+            return Query(table=name, columns=self.columns, where=self.where,
+                         group_by=self.group_by, limit=10).bind(query)
