@@ -44,5 +44,5 @@ class ChartHandler(BaseHandler):
         result = query.execute()
         fields = [_['name'] for _ in chart.y_fields if _]
         data = chart_data(result, chart.x_fields, fields)
-        self.response(ds_id=ds.id, table=chart.table, type=chart.type,
+        self.response(ds_id=ds.id, table=chart.table, type=chart.type, sql=query.sql,
                       xFields=chart.x_fields, yFields=chart.y_fields, **data)
