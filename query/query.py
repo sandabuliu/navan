@@ -288,7 +288,7 @@ class Query(object):
                 break
 
         for i, q in enumerate(results):
-            if i == len(queries) - 1:
+            if i == len(results) - 1:
                 results[-1].bind(bind)
             else:
                 q.bind(results[i + 1])
