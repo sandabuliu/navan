@@ -328,7 +328,7 @@ class JSONEncoder(json.JSONEncoder):
             return None
         if isinstance(obj, type):
             return obj.__name__
-        if isinstance(obj, pandas.tslib.NaTType):
+        if isinstance(obj, type(pandas.NaT)):
             return None
         if isinstance(obj, datetime):
             return obj.strftime('%Y-%m-%d %H:%M:%S')

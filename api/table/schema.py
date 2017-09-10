@@ -23,13 +23,11 @@ class SchemaHandler(BaseHandler):
         ds = db.datasource(id=args['ds_id']).single()
         connector = Connector(user_id=self.user_id, type=ds.type, db=ds.name, **ds.params)
         engine = Engine(connector)
-        result = [{'name': _, 'schema': [_['name'] for _ in engine.schema(_)]} for _ in engine.tables()
-                  if not tables or _ in tables]
 
         dbmeta = DBMeta(self.user_id)
         vtables = dbmeta.vtable(ds_id=args['ds_id']).all()
-        for tb in vtables:
-            table = clause(tb.query)
-            if not tables or tb.name in tables:
-                result.append({'name': tb.name, 'schema': [c.alias or c.value for c in table.columns]})
+        all_table = engine.tables() + [_.name for _ in vtables]
+        result = [{'name': _, 'schema': [_['name'] for _ in engine.schema(_)]} for _ in all_table
+                  if not tables or _ in tables]
+
         self.response(**{'total': len(result), 'schema': result})
