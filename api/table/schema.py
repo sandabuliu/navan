@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from model import DBMeta
 from server import BaseHandler
 
 from query.engine import Engine
 from query.connector import Connector
-from query.binder import clause
 
 
 __author__ = 'tong'
@@ -16,7 +16,7 @@ class SchemaHandler(BaseHandler):
     def get(self):
         args = self.parse_args([
             {'name': 'ds_id', 'required': True, 'location': 'args', 'cast': int},
-            {'name': 'tables', 'required': False, 'location': 'args'}
+            {'name': 'tables', 'required': False, 'location': 'args', 'cast': json.loads}
         ])
         tables = args.get('tables')
         db = DBMeta(self.user_id)
