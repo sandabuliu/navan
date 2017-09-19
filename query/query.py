@@ -122,7 +122,7 @@ class Query(object):
     @property
     def binded_table(self):
         if not self.connector:
-            return
+            raise Exception('You should bind a connector first!')
         if self.table.name in self.tables:
             return self.tables[self.table.name]
         if isinstance(self._bindobj, Query):

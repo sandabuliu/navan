@@ -7,7 +7,7 @@ from server import BaseHandler
 
 from query.query import Query
 from query.connector import Connector
-from query.clause import Table, Column
+from query.clause import Table, Column, Text, Condition
 
 from api.util import chart_data, function
 
@@ -21,6 +21,7 @@ class ChartHandler(BaseHandler):
             {'name': 'table', 'required': True, 'location': 'args'},
             {'name': 'xFields', 'required': True, 'location': 'args', 'cast': json.loads},
             {'name': 'yFields', 'required': True, 'location': 'args', 'cast': json.loads},
+            {'name': 'filters', 'required': False, 'location': 'args', 'cast': json.loads, 'defalt': '[]'},
             {'name': 'type', 'required': True, 'location': 'args'}
         ])
 
@@ -110,6 +111,22 @@ class ChartHandler(BaseHandler):
         self.response(message='success')
 
     @property
+    def where(self):
+        wheres = []
+        for condition in self.args.get('filters', []):
+            if not condition['name'] or not condition['operator']:
+                continue
+            name = condition['name']
+            operator = condition['operator']
+            if condition.get('value_type', 'value') == 'value':
+                value = condition['value']
+            else:
+                value = Text(condition['value'])
+            c = Condition(Column(name), operator, value)
+            wheres.append(c.json())
+        return wheres
+
+    @property
     def table(self):
         chart = self.dbmeta.vtable(name=self.args['table'], ds_id=self.args['ds_id']).first()
         if chart:
@@ -135,9 +152,10 @@ class ChartHandler(BaseHandler):
     def query(self):
         table = self.table
         if table['type'] == 'table':
-            return Query(table=self.table, columns=self.columns, group_by=self.group_by, limit=500)
+            return Query(table=self.table, columns=self.columns, where=self.where, group_by=self.group_by, limit=500)
         else:
             query = Query.load(self.table)
             name = self.args['table']
             query.alias(name)
-            return Query(table=name, columns=self.columns, group_by=self.group_by, limit=500).bind(query)
+            return Query(table=name, columns=self.columns, where=self.where,
+                         group_by=self.group_by, limit=500).bind(query)

@@ -16,6 +16,7 @@ import tornado.httpserver
 from random import randint
 from functools import wraps
 from Crypto.Cipher import AES
+from types import GeneratorType
 from tornado.gen import coroutine, Task
 from tornado.web import RequestHandler, StaticFileHandler, HTTPError, MissingArgumentError
 
@@ -174,7 +175,10 @@ class BaseHandler(RequestHandler):
         self.process_start_time = time.time()
         try:
             self.auth()
-            func(*args, **kwargs)
+            ret = func(*args, **kwargs)
+            if isinstance(ret, GeneratorType):
+                for item in ret:
+                    yield item
         except HTTPError, e:
             self.response(e.status_code, str(e))
             self.logger.error(e, exc_info=True)
