@@ -18,4 +18,6 @@
 * 仪表盘布局
 * 仪表盘分享
 
+在线 demo: [http://navan.cc](http://navan.cc)
+
 Copyright © 2017 [g_tongbin@foxmail.com](mailto:g_tongbin@foxmail.com)
