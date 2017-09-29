@@ -13,7 +13,7 @@ __author__ = 'tong'
 
 class DBMeta(object):
     def __init__(self, user_id=None):
-        self.session = DBSession
+        self.session = DBSession()
         self.user_id = user_id
 
     def user(self, *args, **kwargs):

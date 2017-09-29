@@ -6,7 +6,7 @@ from sqlalchemy import Column
 from sqlalchemy.sql import text
 from sqlalchemy.sql.schema import DefaultClause
 from sqlalchemy.dialects.mysql import INTEGER, VARCHAR, TINYINT, TIMESTAMP
-from base import Base, MetaBase
+from base import Base, MetaBase, undefined
 
 __author__ = 'tong'
 
@@ -41,16 +41,25 @@ class User(MetaBase):
         self.name = None
         self.ctime = None
         self.utime = None
-        self.photo = None
+        self.avatar = None
         self.gender = None
         self.is_del = None
         super(User, self).__init__(session, *args, **kwargs)
 
     def insert(self):
         pwd = self.password
-        self.password = hashlib.md5(self.password).hexdigest()
-        super(User, self).insert()
+        self.password = undefined
+        if self.first():
+            raise Exception('reduplicate username')
+        self.password = hashlib.md5(pwd).hexdigest()
+        self.email = self.username
+        self.name = self.username.split('@')[0]
+        self.avatar = 'https://avatars2.githubusercontent.com/u/15702192'
+        ret = super(User, self).insert()
         self.password = pwd
+        self.avatar = undefined
+        self.email = undefined
+        return ret
 
     def auth(self):
         from utils.cache import cache

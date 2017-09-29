@@ -142,6 +142,7 @@ class BaseHandler(RequestHandler):
     logging.getLogger('query').addFilter(log_tracer)
 
     AES_OBJ = AES.new(str(uuid.uuid4())[:16])
+    NEED_AUTHED = True
 
     def __init__(self, application, request, **kwargs):
         super(BaseHandler, self).__init__(application, request, **kwargs)
@@ -174,7 +175,8 @@ class BaseHandler(RequestHandler):
     def run(self, func, *args, **kwargs):
         self.process_start_time = time.time()
         try:
-            self.auth()
+            if self.NEED_AUTHED:
+                self.auth()
             ret = func(*args, **kwargs)
             if isinstance(ret, GeneratorType):
                 for item in ret:

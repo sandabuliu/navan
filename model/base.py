@@ -15,7 +15,7 @@ from sqlalchemy.ext.declarative import declarative_base
 __author__ = 'tong'
 
 
-engine = create_engine(os.environ.get('MYSQL_URL'), echo=False)
+engine = create_engine(os.environ.get('MYSQL_URL') or 'mysql://root:123456@localhost/navan?charset=utf8', echo=False)
 session_factory = sessionmaker(bind=engine, autocommit=False)
 DBSession = scoped_session(session_factory)
 

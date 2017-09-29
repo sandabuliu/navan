@@ -213,7 +213,6 @@ class ODOBinder(object):
                 if not join_table:
                     tb1 = tables[where.object.table]
                     tb2 = tables[where.other.table]
-                    print 1, tb1.fields, tb2.fields, where.object.alias, where.other.alias
                     join_table = join(tb1, tb2, where.object.alias, where.other.alias)
                     joins = {where.object.table, where.other.table}
                     wheres[i] = False
