@@ -14,11 +14,6 @@ from query.clause import Table, Column, Condition
 __author__ = 'tong'
 
 
-def get_ds(ds_id):
-    return [{'username': 'root', 'host': '127.0.0.1', 'port': 3306, 'password': '123456', 'db': 'mytest', 'type': 'MYSQL'},
-            {'username': 'root', 'host': '127.0.0.1', 'port': 3306, 'password': '123456', 'db': 'noah', 'type': 'MYSQL'}][int(ds_id)-1]
-
-
 class TableHandler(BaseHandler):
     def post(self):
         args = self.parse_args([

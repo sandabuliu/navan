@@ -9,15 +9,14 @@ from datetime import datetime
 from Crypto.Cipher import AES
 from sqlalchemy import TypeDecorator, types
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 __author__ = 'tong'
 
 
 engine = create_engine(os.environ.get('MYSQL_URL') or 'mysql://root:123456@localhost/navan?charset=utf8', echo=False)
-session_factory = sessionmaker(bind=engine, autocommit=False)
-DBSession = scoped_session(session_factory)
+DBSession = sessionmaker(bind=engine, autocommit=False)
 
 metadata = MetaData(engine)
 metadata.reflect()
