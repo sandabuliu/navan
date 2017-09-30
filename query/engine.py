@@ -95,7 +95,7 @@ class SQLEngine(object):
             self._table_names = self._engine.dialect.get_table_names(conn)
             self._table_names += self._engine.dialect.get_view_names(conn)
             self._table_names.sort()
-        return list(self._table_names)
+        return list(set(self._table_names))
 
     def schema(self, table):
         from constants import types
