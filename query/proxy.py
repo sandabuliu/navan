@@ -36,11 +36,14 @@ class ResultProxy(object):
 
     def _ttype(self, name):
         ttype = object
-        for res in self._data:
-            if res.get(name) is None:
-                continue
-            ttype = type(res.get(name))
-            break
+        try:
+            for res in self._data:
+                if res[name] is None:
+                    continue
+                ttype = type(res[name])
+                break
+        except:
+            return ttype
         return ttype
 
     def __str__(self):
