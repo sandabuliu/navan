@@ -3,6 +3,8 @@
 
 from model import DBMeta
 from server import BaseHandler
+from query.engine import Engine
+from query.connector import Connector
 
 __author__ = 'tong'
 
@@ -11,6 +13,8 @@ def params(dbtype, **kwargs):
     dbtype = dbtype.upper()
     if dbtype in ['CSV', 'EXCEL']:
         return {'filelist': kwargs.get('filelist')}
+    if dbtype == 'OTHERDB':
+        return {'connect_str': kwargs.get('connect_str')}
 
     kw = {k: v for k, v in kwargs.items() if k in ['host', 'port', 'username', 'password']}
     if dbtype == 'ORACLE':
@@ -33,6 +37,14 @@ class DataSourceHandler(BaseHandler):
         if dss:
             self.response(409, message='已存在名称为 %s 的数据源' % args['name'])
             return
+
+        if not args['params'].get('filelist'):
+            connector = Connector(args['type'], **args['params'])
+            databases = Engine(connector).databases()
+            if args['name'] not in databases:
+                self.response(412, u'数据库中不存在 %s 库'  % args['name'])
+                return
+
         ds = db.datasource(**args)
         ds.insert()
         db.commit()
