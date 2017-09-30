@@ -39,4 +39,4 @@ class DBMeta(object):
             raise
 
     def __del__(self):
-        self.session.commit()
+        self.commit()

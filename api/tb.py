@@ -32,6 +32,17 @@ class TableHandler(BaseHandler):
         if not table_json:
             return
 
+        if self.meta.vtable(name=args['name']).first():
+            self.response(409, u'已存在名字为 %s 的合表' % args['name'])
+            return
+
+        ds = self.meta.datasource(id=args['ds_id']).single()
+        connector = Connector(user_id=self.user_id, type=ds.type, db=ds.name, **ds.params)
+        engine = Engine(connector)
+        if args['name'] in engine.tables():
+            self.response(409, u'原始库中已存在表(%s)' % args['name'])
+            return
+
         vtb = self.meta.vtable(ds_id=args['ds_id'], name=args['name'], query=table_json)
         vtb.insert()
         self.meta.commit()

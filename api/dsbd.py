@@ -15,6 +15,10 @@ class DashboardHandler(BaseHandler):
 
         db = DBMeta(self.user_id)
         ds = db.dashboard(name=args['name'])
+        if ds.first():
+            self.response(409, u'已存在名字为 %s 的仪表盘' % args['name'])
+            return
+
         ds.insert()
         db.commit()
         self.response(message='success')
