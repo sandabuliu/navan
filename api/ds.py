@@ -39,7 +39,7 @@ class DataSourceHandler(BaseHandler):
             return
 
         if not args['params'].get('filelist'):
-            connector = Connector(args['type'], **args['params'])
+            connector = Connector(args['type'], db=args['name'], **args['params'])
             databases = Engine(connector).databases()
             if args['name'] not in databases:
                 self.response(412, u'数据库中不存在 %s 库'  % args['name'])
