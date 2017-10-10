@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 from user import User
 from datasource import Ds
 from vtable import VTable
@@ -9,6 +10,8 @@ from dashboard import Dashboard
 from base import DBSession
 
 __author__ = 'tong'
+
+logger = logging.getLogger('runtime')
 
 
 class DBMeta(object):
@@ -32,11 +35,10 @@ class DBMeta(object):
         return Dashboard(self.session, *args, user_id=self.user_id, **kwargs)
 
     def commit(self):
-        try:
-            return self.session.commit()
-        except Exception:
-            self.session.rollback()
-            raise
+        return self.session.commit()
 
     def __del__(self):
-        self.commit()
+        try:
+            self.commit()
+        except Exception, e:
+            logger.warn(str(e), exc_info=True)
